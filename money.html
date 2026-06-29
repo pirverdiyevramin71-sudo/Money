@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1C1B17">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Xəzinə">
+<title>Xəzinə — Pul İdarəetmə Dəftəri</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%231C1B17%22/><text x=%2250%22 y=%2266%22 font-size=%2255%22 text-anchor=%22middle%22 fill=%22%23C9A646%22 font-family=%22Georgia%22>₼</text></svg>">
+<style>
+  @import url('https://cdnjs.cloudflare.com/ajax/libs/lato/2.0.7/lato.min.css');
+
+  :root{
+    --bg: #1C1B17;
+    --bg-raised: #242219;
+    --bg-card: #2A2719;
+    --bone: #EFE9DC;
+    --bone-dim: #B8B09C;
+    --gold: #C9A646;
+    --gold-bright: #E0C168;
+    --bronze: #5B4A2A;
+    --line: #3A3624;
+    --red: #B5503E;
+    --green: #6E8F5C;
+    --radius: 2px;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+  html,body{
+    background:var(--bg);
+    color:var(--bone);
+    font-family: 'Lato', -apple-system, sans-serif;
+    min-height:100vh;
+    overscroll-behavior-y:none;
+  }
+
+  body{
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(201,166,70,0.035) 27px, rgba(201,166,70,0.035) 28px);
+  }
+
+  .serif{ font-family: Georgia, 'Times New Roman', serif; }
+  .mono{ font-family: 'SF Mono', 'Courier New', monospace; }
+
+  #app{ max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:90px; position:relative; }
+
+  /* HEADER */
+  header.top{
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid var(--line);
+    position: sticky; top:0; z-index:20;
+    background: var(--bg);
+  }
+  header.top .eyebrow{
+    font-size:11px; letter-spacing:0.18em; text-transform:uppercase;
+    color: var(--gold); opacity:0.85; margin-bottom:6px;
+  }
+  header.top h1{
+    font-size: 26px; font-weight:400; letter-spacing:0.01em;
+  }
+  header.top h1 .amp{ color:var(--gold); font-style:italic; }
+
+  /* BALANCE HERO */
+  .balance-block{
+    padding: 26px 20px 10px;
+    text-align:left;
+  }
+  .balance-label{
+    font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--bone-dim); margin-bottom:8px;
+  }
+  .balance-figure{
+    font-size: 46px; line-height:1;
+    font-family: Georgia, serif;
+    font-weight:400;
+    letter-spacing:-0.01em;
+  }
+  .balance-figure .cents{ font-size: 24px; color:var(--bone-dim); }
+  .balance-sub{
+    margin-top:10px; font-size:13px; color:var(--bone-dim);
+    display:flex; gap:14px;
+  }
+  .balance-sub span b{ color:var(--bone); font-weight:600; }
+  .balance-sub .pos{ color: var(--green); }
+  .balance-sub .neg{ color: var(--red); }
+
+  /* SAFE / VAULT bar */
+  .vault-strip{
+    margin: 18px 20px 0;
+    border:1px solid var(--line);
+    background: linear-gradient(135deg, rgba(201,166,70,0.08), transparent);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px;
+  }
+  .vault-strip .vt-left{ display:flex; align-items:center; gap:10px; }
+  .vault-strip .vt-icon{ font-size:20px; color:var(--gold); }
+  .vault-strip .vt-text .vt-title{ font-size:13px; color:var(--bone); font-weight:700; }
+  .vault-strip .vt-text .vt-desc{ font-size:11.5px; color:var(--bone-dim); margin-top:2px; }
+  .vault-strip .vt-amt{ font-family: Georgia, serif; font-size:18px; color:var(--gold-bright); white-space:nowrap; }
+
+  /* SECTION LABEL */
+  .section-label{
+    margin: 30px 20px 12px;
+    display:flex; align-items:baseline; justify-content:space-between;
+  }
+  .section-label h2{
+    font-size:13px; letter-spacing:0.14em; text-transform:uppercase; color:var(--bone-dim); font-weight:700;
+  }
+  .section-label a, .section-label button.link{
+    font-size:12px; color:var(--gold); background:none; border:none; cursor:pointer; font-family:inherit;
+  }
+
+  /* ENVELOPE / BUCKET ROWS */
+  .buckets{ margin:0 20px; border-top:1px solid var(--line); }
+  .bucket-row{
+    display:flex; align-items:center; gap:12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .bucket-row .b-icon{
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background: var(--bg-card); border:1px solid var(--line);
+    font-size:16px; flex-shrink:0;
+  }
+  .bucket-row .b-info{ flex:1; min-width:0; }
+  .bucket-row .b-name{ font-size:14.5px; font-weight:600; }
+  .bucket-row .b-meta{ font-size:11.5px; color:var(--bone-dim); margin-top:2px; }
+  .bucket-row .b-bar{
+    height:4px; background:var(--line); border-radius:2px; margin-top:7px; overflow:hidden;
+  }
+  .bucket-row .b-bar-fill{ height:100%; background: var(--gold); border-radius:2px; }
+  .bucket-row .b-bar-fill.over{ background: var(--red); }
+  .bucket-row .b-amt{ text-align:right; flex-shrink:0; }
+  .bucket-row .b-amt .num{ font-family: Georgia, serif; font-size:15px; }
+  .bucket-row .b-amt .pct{ font-size:10.5px; color:var(--bone-dim); margin-top:2px; }
+
+  /* TRANSACTIONS LIST */
+  .tx-list{ margin:0 20px; }
+  .tx-row{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 0; border-bottom:1px solid var(--line);
+  }
+  .tx-row .t-icon{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg-card); font-size:15px; border:1px solid var(--line);
+  }
+  .tx-row .t-info{ flex:1; min-width:0; }
+  .tx-row .t-name{ font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tx-row .t-meta{ font-size:11.5px; color:var(--bone-dim); margin-top:2px; }
+  .tx-row .t-amt{ font-family:Georgia, serif; font-size:15px; flex-shrink:0; }
+  .tx-row .t-amt.in{ color:var(--green); }
+  .tx-row .t-amt.out{ color:var(--bone); }
+  .tx-row .t-del{ background:none;border:none;color:var(--bone-dim); font-size:18px; padding:4px 6px; cursor:pointer; flex-shrink:0; }
+
+  .empty-note{
+    margin:0 20px; padding:30px 18px; text-align:center; color:var(--bone-dim);
+    border:1px dashed var(--line); border-radius:var(--radius); font-size:13px; line-height:1.6;
+  }
+
+  /* TEACHINGS / NOTES */
+  .teaching-card{
+    margin: 0 20px; padding:18px 18px;
+    background: var(--bg-card); border-left:3px solid var(--gold);
+    border-radius:var(--radius);
+  }
+  .teaching-card .tc-num{ font-size:11px; color:var(--gold); letter-spacing:0.1em; margin-bottom:8px; font-weight:700;}
+  .teaching-card .tc-title{ font-family:Georgia, serif; font-size:16px; margin-bottom:8px; color:var(--bone); }
+  .teaching-card .tc-body{ font-size:13px; line-height:1.65; color:var(--bone-dim); }
+
+  .teaching-nav{ display:flex; justify-content:space-between; margin:14px 20px 0; }
+  .teaching-nav button{
+    background:none; border:1px solid var(--line); color:var(--bone-dim);
+    padding:7px 14px; font-size:12px; border-radius:var(--radius); cursor:pointer;
+  }
+
+  .journal-textarea{
+    margin:0 20px; width:calc(100% - 40px); min-height:90px;
+    background:var(--bg-card); border:1px solid var(--line); color:var(--bone);
+    padding:14px; font-size:13.5px; font-family:inherit; border-radius:var(--radius);
+    resize:vertical; line-height:1.6;
+  }
+  .journal-textarea:focus{ outline:none; border-color:var(--gold); }
+  .journal-save{
+    margin:10px 20px 0; background:var(--gold); color:var(--bg); border:none;
+    padding:10px 18px; font-size:12.5px; font-weight:700; border-radius:var(--radius); cursor:pointer;
+    letter-spacing:0.04em;
+  }
+  .journal-entries{ margin:16px 20px 0; }
+  .journal-entry{
+    padding:12px 0; border-top:1px solid var(--line); font-size:13px; line-height:1.6; color:var(--bone-dim);
+  }
+  .journal-entry .je-date{ font-size:10.5px; color:var(--gold); letter-spacing:0.08em; margin-bottom:4px; display:block; }
+
+  /* BOTTOM NAV */
+  nav.bottom{
+    position:fixed; bottom:0; left:0; right:0;
+    max-width:480px; margin:0 auto;
+    background: var(--bg-raised); border-top:1px solid var(--line);
+    display:flex; z-index:30; overflow-x:auto;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav.bottom button{
+    flex:1; min-width:64px; background:none; border:none; color:var(--bone-dim);
+    padding:12px 4px 10px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    font-size:10px; cursor:pointer; font-family:inherit; letter-spacing:0.01em; white-space:nowrap;
+  }
+  nav.bottom button .nicon{ font-size:18px; }
+  nav.bottom button.active{ color:var(--gold); }
+
+  /* FAB */
+  .fab{
+    position:fixed; bottom:78px; right:20px;
+    max-width:480px;
+    width:56px; height:56px; border-radius:50%;
+    background:var(--gold); color:var(--bg);
+    font-size:28px; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    z-index:25;
+  }
+
+  /* MODAL */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:50;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity 0.2s;
+  }
+  .modal-backdrop.show{ opacity:1; pointer-events:all; }
+  .modal-sheet{
+    background:var(--bg-raised); width:100%; max-width:480px;
+    border-radius:14px 14px 0 0; padding:22px 20px 28px;
+    transform:translateY(100%); transition:transform 0.25s ease;
+    max-height:88vh; overflow-y:auto;
+  }
+  .modal-backdrop.show .modal-sheet{ transform:translateY(0); }
+  .modal-sheet h3{ font-family:Georgia,serif; font-size:19px; margin-bottom:18px; }
+  .modal-sheet label{ font-size:11.5px; color:var(--bone-dim); letter-spacing:0.06em; text-transform:uppercase; display:block; margin-bottom:6px; margin-top:16px; }
+  .modal-sheet input, .modal-sheet select{
+    width:100%; background:var(--bg-card); border:1px solid var(--line); color:var(--bone);
+    padding:12px 12px; font-size:15px; border-radius:var(--radius); font-family:inherit;
+  }
+  .modal-sheet input:focus, .modal-sheet select:focus{ outline:none; border-color:var(--gold); }
+  .type-toggle{ display:flex; gap:8px; margin-top:6px; }
+  .type-toggle button{
+    flex:1; padding:11px; border-radius:var(--radius); border:1px solid var(--line);
+    background:var(--bg-card); color:var(--bone-dim); font-size:13px; cursor:pointer; font-weight:700;
+  }
+  .type-toggle button.sel-in{ background:rgba(110,143,92,0.18); border-color:var(--green); color:var(--green); }
+  .type-toggle button.sel-out{ background:rgba(181,80,62,0.18); border-color:var(--red); color:var(--red); }
+  .cat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:6px; }
+  .cat-grid button{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:10px 4px; color:var(--bone-dim); font-size:10.5px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .cat-grid button .ci{ font-size:18px; }
+  .cat-grid button.sel{ border-color:var(--gold); color:var(--gold); background:rgba(201,166,70,0.1); }
+  .modal-submit{
+    width:100%; margin-top:22px; background:var(--gold); color:var(--bg); border:none;
+    padding:14px; font-size:14.5px; font-weight:700; border-radius:var(--radius); cursor:pointer; letter-spacing:0.03em;
+  }
+  .modal-close{
+    position:absolute; top:18px; right:18px; background:none; border:none; color:var(--bone-dim); font-size:22px; cursor:pointer;
+  }
+  .modal-sheet{ position:relative; }
+
+  /* SPLIT SETUP */
+  .split-row{
+    display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line);
+  }
+  .split-row .sr-name{ flex:1; font-size:14px; }
+  .split-row input[type=number]{
+    width:64px; text-align:right; background:var(--bg-card); border:1px solid var(--line);
+    color:var(--gold-bright); padding:8px; border-radius:var(--radius); font-family:Georgia,serif; font-size:14px;
+  }
+  .split-total-warn{ font-size:12px; color:var(--red); margin-top:10px; text-align:center; }
+  .split-total-ok{ font-size:12px; color:var(--green); margin-top:10px; text-align:center; }
+
+  .install-hint{
+    margin:0 20px 0; padding:13px 16px; background:rgba(201,166,70,0.08); border:1px solid var(--line);
+    border-radius:var(--radius); font-size:12px; color:var(--bone-dim); line-height:1.55; display:flex; gap:10px; align-items:flex-start;
+  }
+  .install-hint .ih-x{ background:none;border:none;color:var(--bone-dim);font-size:16px;cursor:pointer;margin-left:auto; flex-shrink:0; }
+
+  /* STAT CARDS */
+  .stat-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 20px;
+  }
+  .stat-card{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 14px;
+  }
+  .stat-card .sc-label{ font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--bone-dim); margin-bottom:6px; }
+  .stat-card .sc-value{ font-family:Georgia,serif; font-size:20px; color:var(--gold-bright); }
+  .stat-card .sc-value.bad{ color:var(--red); }
+  .stat-card .sc-value.good{ color:var(--green); }
+  .stat-card .sc-sub{ font-size:11px; color:var(--bone-dim); margin-top:4px; }
+
+  .chart-card{
+    margin:0 20px; background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 16px 14px;
+  }
+  .chart-card .cc-title{ font-size:12.5px; color:var(--bone-dim); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:14px; }
+  .chart-card canvas{ max-height:240px; }
+
+  .legend-list{ margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .legend-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; }
+  .legend-row .lg-dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .legend-row .lg-name{ flex:1; color:var(--bone-dim); }
+  .legend-row .lg-val{ font-family:Georgia,serif; color:var(--bone); }
+
+  /* DEBTS */
+  .debt-toggle{ display:flex; gap:8px; margin:0 20px 16px; }
+  .debt-toggle button{
+    flex:1; padding:10px; border-radius:var(--radius); border:1px solid var(--line);
+    background:var(--bg-card); color:var(--bone-dim); font-size:12.5px; cursor:pointer; font-weight:700;
+  }
+  .debt-toggle button.active-owe{ background:rgba(181,80,62,0.18); border-color:var(--red); color:var(--red); }
+  .debt-toggle button.active-owed{ background:rgba(110,143,92,0.18); border-color:var(--green); color:var(--green); }
+
+  .debt-card{
+    margin:0 20px 12px; background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:15px 16px; position:relative;
+  }
+  .debt-card.settled{ opacity:0.5; }
+  .debt-card .dc-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .debt-card .dc-name{ font-size:14.5px; font-weight:700; }
+  .debt-card .dc-amt{ font-family:Georgia,serif; font-size:18px; }
+  .debt-card .dc-amt.owe{ color:var(--red); }
+  .debt-card .dc-amt.owed{ color:var(--green); }
+  .debt-card .dc-meta{ font-size:11.5px; color:var(--bone-dim); margin-top:6px; }
+  .debt-card .dc-due{ font-size:11px; margin-top:4px; }
+  .debt-card .dc-due.soon{ color:var(--gold); }
+  .debt-card .dc-due.late{ color:var(--red); font-weight:700; }
+  .debt-card .dc-actions{ display:flex; gap:8px; margin-top:12px; }
+  .debt-card .dc-actions button{
+    flex:1; padding:8px; font-size:11.5px; border-radius:var(--radius); border:1px solid var(--line);
+    background:var(--bg); color:var(--bone-dim); cursor:pointer;
+  }
+  .debt-card .dc-actions button.settle-btn{ color:var(--gold); border-color:var(--gold); }
+
+  /* CATEGORY DETAIL */
+  .cat-detail-trigger{ background:none; border:none; padding:0; cursor:pointer; }
+  .cat-examples{ margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+  .cat-examples .ce-item{ font-size:12px; color:var(--bone-dim); padding:3px 0; }
+  .cat-examples .ce-item::before{ content:'— '; color:var(--gold); }
+
+  .budget-warn-badge{
+    font-size:10px; background:rgba(181,80,62,0.2); color:var(--red); padding:2px 7px;
+    border-radius:10px; margin-left:6px; font-weight:700;
+  }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* LOCK SCREEN */
+  #lock-screen{
+    position:fixed; inset:0; background:var(--bg); z-index:100;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:30px;
+  }
+  #lock-screen .lock-icon{ font-size:42px; margin-bottom:18px; color:var(--gold); }
+  #lock-screen h2{ font-family:Georgia,serif; font-size:20px; margin-bottom:8px; }
+  #lock-screen p{ font-size:12.5px; color:var(--bone-dim); margin-bottom:26px; text-align:center; }
+  .pin-dots{ display:flex; gap:14px; margin-bottom:30px; }
+  .pin-dots .pd{ width:14px; height:14px; border-radius:50%; border:1.5px solid var(--bone-dim); }
+  .pin-dots .pd.filled{ background:var(--gold); border-color:var(--gold); }
+  .pin-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; max-width:280px; width:100%; }
+  .pin-pad button{
+    aspect-ratio:1; border-radius:50%; border:1px solid var(--line); background:var(--bg-card);
+    color:var(--bone); font-size:20px; font-family:Georgia,serif; cursor:pointer;
+  }
+  .pin-pad button.pin-clear{ font-size:12px; color:var(--bone-dim); border:none; background:none; }
+  .pin-pad button.pin-back{ font-size:16px; color:var(--bone-dim); border:none; background:none; }
+  .pin-error{ color:var(--red); font-size:12px; margin-top:14px; height:16px; }
+  .pin-skip{ margin-top:24px; background:none; border:none; color:var(--gold); font-size:12.5px; cursor:pointer; text-decoration:underline; }
+
+  ::-webkit-scrollbar{ width:0; height:0; }
+</style>
+</head>
+<body>
+
+<div id="lock-screen" style="display:none;">
+  <div class="lock-icon">🔐</div>
+  <h2 class="serif" id="lock-title">PIN Daxil Et</h2>
+  <p id="lock-sub">Maliyyə məlumatların qorunur</p>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pd"></div><div class="pd"></div><div class="pd"></div><div class="pd"></div>
+  </div>
+  <div class="pin-pad" id="pin-pad">
+    <button onclick="pinPress('1')">1</button><button onclick="pinPress('2')">2</button><button onclick="pinPress('3')">3</button>
+    <button onclick="pinPress('4')">4</button><button onclick="pinPress('5')">5</button><button onclick="pinPress('6')">6</button>
+    <button onclick="pinPress('7')">7</button><button onclick="pinPress('8')">8</button><button onclick="pinPress('9')">9</button>
+    <button class="pin-clear" onclick="pinClearAll()">Sil</button><button onclick="pinPress('0')">0</button><button class="pin-back" onclick="pinBackspace()">⌫</button>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <button class="pin-skip" id="pin-skip-btn" onclick="skipPinSetup()">Hələlik keç (PIN qoymadan davam et)</button>
+</div>
+
+<div id="app">
+
+  <header class="top">
+    <div class="eyebrow">Xəzinə Dəftəri</div>
+    <h1 class="serif">Pulu<span class="amp"> sən</span> idarə et</h1>
+  </header>
+
+  <!-- ============ HOME VIEW ============ -->
+  <div class="view active" id="view-home">
+
+    <div class="balance-block">
+      <div class="balance-label">Cari Sərbəst Bakiyə</div>
+      <div class="balance-figure serif" id="bal-figure">0<span class="cents mono">.00 ₼</span></div>
+      <div class="balance-sub mono">
+        <span class="pos">+<b id="sum-in">0.00</b> gəlir</span>
+        <span class="neg">-<b id="sum-out">0.00</b> xərc</span>
+      </div>
+    </div>
+
+    <div class="vault-strip" id="vault-strip">
+      <div class="vt-left">
+        <div class="vt-icon">🔒</div>
+        <div class="vt-text">
+          <div class="vt-title">Toxunulmaz Xəzinə</div>
+          <div class="vt-desc">Əmanət — bura qoyulan pul xərclənmir</div>
+        </div>
+      </div>
+      <div class="vt-amt mono" id="vault-amt">0.00 ₼</div>
+    </div>
+
+    <div id="install-hint-wrap"></div>
+
+    <div class="section-label">
+      <h2>Bölgülərin (Kisələr)</h2>
+      <button class="link" onclick="showView('setup')">Tənzimlə →</button>
+    </div>
+    <div style="margin:0 20px 10px; font-size:11.5px; color:var(--bone-dim);">Hər kisəyə bas — nəyə xərcləməli olduğunu görəcəksən.</div>
+    <div class="buckets" id="bucket-list"></div>
+
+    <div class="section-label">
+      <h2>Son Hərəkətlər</h2>
+      <button class="link" onclick="showView('history')">Hamısı →</button>
+    </div>
+    <div class="tx-list" id="recent-list"></div>
+
+  </div>
+
+  <!-- ============ STATS / CHARTS VIEW ============ -->
+  <div class="view" id="view-stats">
+    <div class="section-label" style="margin-top:24px;">
+      <h2>Ümumi Vəziyyət</h2>
+    </div>
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <div class="section-label">
+      <h2>Xərc Bölgüsü (Kateqoriya üzrə)</h2>
+    </div>
+    <div class="chart-card">
+      <div class="cc-title">Bütün vaxtların xərc paylanması</div>
+      <canvas id="pieChart"></canvas>
+      <div class="legend-list" id="pie-legend"></div>
+    </div>
+
+    <div class="section-label">
+      <h2>Aylar Üzrə Gəlir / Xərc</h2>
+    </div>
+    <div class="chart-card">
+      <div class="cc-title">Son 6 ay</div>
+      <canvas id="lineChart"></canvas>
+    </div>
+
+    <div class="section-label">
+      <h2>Gündəlik Xərc Templosu</h2>
+    </div>
+    <div class="chart-card" style="margin-bottom:20px;">
+      <div class="cc-title">Son 14 gün</div>
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ============ DEBTS VIEW ============ -->
+  <div class="view" id="view-debts">
+    <div class="section-label" style="margin-top:24px;">
+      <h2>Borc Vəziyyəti</h2>
+    </div>
+    <div class="stat-grid" id="debt-stat-grid" style="margin-bottom:20px;"></div>
+
+    <div class="debt-toggle">
+      <button id="debt-tab-owe" onclick="setDebtTab('owe')">Mənim Borcum</button>
+      <button id="debt-tab-owed" onclick="setDebtTab('owed')">Mənə Borc Var</button>
+    </div>
+
+    <div id="debt-list"></div>
+
+    <button class="journal-save" style="margin:6px 20px 24px;" onclick="openDebtModal()">+ Yeni Borc Qeydi</button>
+
+    <div class="section-label" id="strategy-section-label" style="display:none;">
+      <h2>Ödəmə Strategiyası</h2>
+    </div>
+    <div style="margin:0 20px 14px; font-size:12px; color:var(--bone-dim); line-height:1.6;" id="strategy-intro"></div>
+    <div class="debt-toggle" id="strategy-toggle" style="display:none;">
+      <button id="strat-snowball-btn" onclick="setStrategy('snowball')">Snowball (kiçikdən)</button>
+      <button id="strat-avalanche-btn" onclick="setStrategy('avalanche')">Avalanche (yüksək faizdən)</button>
+    </div>
+    <div id="strategy-order" style="margin:0 20px 24px;"></div>
+  </div>
+
+  <!-- ============ HISTORY VIEW ============ -->
+  <div class="view" id="view-history">
+    <div class="section-label" style="margin-top:24px;">
+      <h2>Bütün Hərəkətlər</h2>
+    </div>
+    <div class="tx-list" id="full-list"></div>
+  </div>
+
+  <!-- ============ SETUP / SPLIT VIEW ============ -->
+  <div class="view" id="view-setup">
+    <div class="section-label" style="margin-top:24px;">
+      <h2>Gəlirini Necə Bölürsən</h2>
+    </div>
+    <div style="margin:0 20px 14px; font-size:12.5px; color:var(--bone-dim); line-height:1.6;">
+      Hər manatın faizini kisələr arasında böl. Yeni gəlir qeyd edəndə, pul avtomatik bu nisbətlərlə bölünəcək. Cəmi 100% olmalıdır.
+    </div>
+    <div class="buckets" id="split-setup-list" style="margin-top:6px;"></div>
+    <div id="split-total-msg" style="margin:14px 20px;"></div>
+    <button class="journal-save" id="split-save-btn" style="margin:18px 20px 8px;">Bölgünü Yadda Saxla</button>
+
+    <div class="section-label">
+      <h2>Hazır Şablonlar</h2>
+    </div>
+    <div style="margin:0 20px; display:flex; flex-direction:column; gap:10px;" id="preset-list"></div>
+
+    <div class="section-label">
+      <h2>Maliyyə Hədəflərim</h2>
+    </div>
+    <div style="margin:0 20px 14px; font-size:12px; color:var(--bone-dim); line-height:1.6;">
+      Konkret məqsəd qoy — "niyə yığdığını" bilmək, yığmağı asanlaşdırır.
+    </div>
+    <div id="goals-list" style="margin:0 20px;"></div>
+    <button class="journal-save" style="margin:6px 20px 0;" onclick="openGoalModal()">+ Yeni Hədəf</button>
+
+    <div class="section-label">
+      <h2>Təkrarlanan Xərclər</h2>
+    </div>
+    <div style="margin:0 20px 14px; font-size:12px; color:var(--bone-dim); line-height:1.6;">
+      Hər ay təkrarlanan ödənişlər (kirayə, abunəlik). Ayın həmin günündə sənə xatırladılacaq.
+    </div>
+    <div id="recurring-list" style="margin:0 20px;"></div>
+    <button class="journal-save" style="margin:6px 20px 24px;" onclick="openRecurringModal()">+ Yeni Təkrarlanan Xərc</button>
+  </div>
+
+  <!-- ============ LESSONS VIEW ============ -->
+  <div class="view" id="view-lessons">
+    <div class="section-label" style="margin-top:24px;">
+      <h2>Sərvət Dərsləri</h2>
+    </div>
+    <div class="teaching-card" id="teaching-card"></div>
+    <div class="teaching-nav">
+      <button onclick="prevTeaching()">← Əvvəlki</button>
+      <span class="mono" id="teaching-counter" style="font-size:12px;color:var(--bone-dim);align-self:center;">1 / 12</span>
+      <button onclick="nextTeaching()">Növbəti →</button>
+    </div>
+
+    <div class="section-label">
+      <h2>Mənəvi Yol Göstərici</h2>
+    </div>
+    <div style="margin:0 20px 14px; font-size:12px; color:var(--bone-dim); line-height:1.6;">
+      Pul idarəçiliyi yalnız rəqəm deyil — niyyət və ürəyin yönüdür. Müqəddəs Kitabda xəzinə, qənaət və sədəqə haqqında deyilənlər.
+    </div>
+    <div class="teaching-card" id="ayah-card" style="border-left-color:var(--bronze);"></div>
+    <div class="teaching-nav">
+      <button onclick="prevAyah()">← Əvvəlki</button>
+      <span class="mono" id="ayah-counter" style="font-size:12px;color:var(--bone-dim);align-self:center;">1 / 7</span>
+      <button onclick="nextAyah()">Növbəti →</button>
+    </div>
+
+    <div class="section-label">
+      <h2>Öz Qeydlərim</h2>
+    </div>
+    <div style="margin:0 20px; font-size:12px; color:var(--bone-dim); margin-bottom:8px;">
+      Pul haqqında öyrəndiyin dərsi, səhvi, ya da qərarı buraya yaz — sonra geri baxarsan.
+    </div>
+    <textarea class="journal-textarea" id="journal-input" placeholder="Məsələn: Bu ay restoran xərcim çox oldu, səbəbi..."></textarea>
+    <button class="journal-save" id="journal-save-btn">Qeydi Yadda Saxla</button>
+    <div class="journal-entries" id="journal-entries"></div>
+  </div>
+
+  <!-- ============ SETTINGS VIEW ============ -->
+  <div class="view" id="view-settings">
+    <div class="section-label" style="margin-top:24px;">
+      <h2>Ehtiyat Fond Hesablayıcısı</h2>
+    </div>
+    <div style="margin:0 20px 14px; font-size:12px; color:var(--bone-dim); line-height:1.6;">
+      Maliyyə qaydası: gözlənilməz hallar üçün (işsizlik, xəstəlik) 3-6 aylık yaşayış xərcin əmanətdə hazır olmalıdır.
+    </div>
+    <div class="stat-grid" id="emergency-fund-grid" style="margin-bottom:20px;"></div>
+
+    <div class="section-label">
+      <h2>Məlumatların Ehtiyat Nüsxəsi</h2>
+    </div>
+    <div style="margin:0 20px 14px; font-size:12px; color:var(--bone-dim); line-height:1.6;">
+      Bütün məlumatların yalnız bu telefonda saxlanılır. Brauzer keşi silinsə, hamısı itər. Mütəmadi olaraq ehtiyat nüsxəsini yüklə.
+    </div>
+    <div style="margin:0 20px; display:flex; gap:10px;">
+      <button class="journal-save" style="margin:0; flex:1;" onclick="exportData()">⬇ Yüklə (JSON)</button>
+      <button class="journal-save" style="margin:0; flex:1; background:var(--bg-card); color:var(--gold); border:1px solid var(--gold);" onclick="document.getElementById('import-file-input').click()">⬆ Geri Yüklə</button>
+    </div>
+    <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importData(event)">
+
+    <div class="section-label">
+      <h2>PIN Qoruması</h2>
+    </div>
+    <div style="margin:0 20px 14px; font-size:12px; color:var(--bone-dim); line-height:1.6;" id="pin-status-text">
+      PIN qoyulmayıb. Maliyyə məlumatların hər kəsə açıqdır.
+    </div>
+    <div style="margin:0 20px; display:flex; gap:10px;">
+      <button class="journal-save" style="margin:0; flex:1;" id="pin-set-btn" onclick="startPinSetup()">PIN Qoy</button>
+      <button class="journal-save" style="margin:0; flex:1; display:none; background:var(--bg-card); color:var(--red); border:1px solid var(--red);" id="pin-remove-btn" onclick="removePin()">PIN-i Sil</button>
+    </div>
+
+    <div class="section-label">
+      <h2>Sıfırlama</h2>
+    </div>
+    <div style="margin:0 20px 24px; font-size:12px; color:var(--bone-dim); line-height:1.6;">
+      Diqqət: bu, bütün hərəkətlərini, borclarını və qeydlərini həmişəlik siləcək.
+    </div>
+    <button class="journal-save" style="margin:0 20px 30px; background:var(--bg-card); color:var(--red); border:1px solid var(--red);" onclick="resetAllData()">Bütün Məlumatları Sil</button>
+  </div>
+
+  <button class="fab" id="fab-add" onclick="openTxModal()">+</button>
+
+
+  <nav class="bottom">
+    <button class="nav-btn active" data-view="home" onclick="showView('home')"><span class="nicon">🏛️</span>Əsas</button>
+    <button class="nav-btn" data-view="history" onclick="showView('history')"><span class="nicon">📜</span>Tarixçə</button>
+    <button class="nav-btn" data-view="stats" onclick="showView('stats')"><span class="nicon">📊</span>Qrafik</button>
+    <button class="nav-btn" data-view="debts" onclick="showView('debts')"><span class="nicon">🤝</span>Borclar</button>
+    <button class="nav-btn" data-view="setup" onclick="showView('setup')"><span class="nicon">⚖️</span>Bölgü</button>
+    <button class="nav-btn" data-view="lessons" onclick="showView('lessons')"><span class="nicon">📖</span>Dərslər</button>
+    <button class="nav-btn" data-view="settings" onclick="showView('settings')"><span class="nicon">⚙️</span>Ayarlar</button>
+  </nav>
+
+</div>
+
+<!-- TRANSACTION MODAL -->
+<div class="modal-backdrop" id="tx-modal" onclick="if(event.target===this) closeTxModal()">
+  <div class="modal-sheet">
+    <button class="modal-close" onclick="closeTxModal()">✕</button>
+    <h3>Yeni Hərəkət</h3>
+
+    <div class="type-toggle">
+      <button id="type-in-btn" onclick="setTxType('in')">↓ Gəlir</button>
+      <button id="type-out-btn" onclick="setTxType('out')">↑ Xərc</button>
+    </div>
+
+    <label>Məbləğ (₼)</label>
+    <input type="number" id="tx-amount" inputmode="decimal" placeholder="0.00" step="0.01">
+
+    <label>Qeyd</label>
+    <input type="text" id="tx-note" placeholder="Məsələn: Maaş, bazarlıq, taksi...">
+
+    <div id="tx-cat-wrap">
+      <label>Kateqoriya (xərc üçün)</label>
+      <div class="cat-grid" id="tx-cat-grid"></div>
+    </div>
+
+    <button class="modal-submit" onclick="submitTx()">Qeyd Et</button>
+  </div>
+</div>
+
+<!-- CATEGORY DETAIL MODAL -->
+<div class="modal-backdrop" id="cat-detail-modal" onclick="if(event.target===this) closeCatDetail()">
+  <div class="modal-sheet">
+    <button class="modal-close" onclick="closeCatDetail()">✕</button>
+    <h3 id="cd-title">Kateqoriya</h3>
+    <div style="font-size:13px; color:var(--bone-dim); line-height:1.6;" id="cd-desc"></div>
+    <div class="cat-examples" id="cd-examples"></div>
+    <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-size:13px;">
+      <span style="color:var(--bone-dim);">Bu kisədə qalıq:</span>
+      <b class="mono" id="cd-balance" style="color:var(--gold-bright);">0.00 ₼</b>
+    </div>
+  </div>
+</div>
+
+<!-- DEBT MODAL -->
+<div class="modal-backdrop" id="debt-modal" onclick="if(event.target===this) closeDebtModal()">
+  <div class="modal-sheet">
+    <button class="modal-close" onclick="closeDebtModal()">✕</button>
+    <h3>Yeni Borc Qeydi</h3>
+
+    <div class="type-toggle">
+      <button id="debt-type-owe-btn" onclick="setDebtType('owe')">Mən Borcluyam</button>
+      <button id="debt-type-owed-btn" onclick="setDebtType('owed')">Mənə Borc Verilib</button>
+    </div>
+
+    <label>Kimə / Kimdən</label>
+    <input type="text" id="debt-person" placeholder="Məsələn: Əli, bank, dost...">
+
+    <label>Məbləğ (₼)</label>
+    <input type="number" id="debt-amount" inputmode="decimal" placeholder="0.00" step="0.01">
+
+    <div id="debt-owe-fields">
+      <label>İllik Faiz Dərəcəsi (% — bilmirsənsə boş saxla)</label>
+      <input type="number" id="debt-interest" inputmode="decimal" placeholder="məsələn: 18" step="0.1">
+
+      <label>Aylıq Minimum Ödəniş (₼ — bilmirsənsə boş saxla)</label>
+      <input type="number" id="debt-minpay" inputmode="decimal" placeholder="0.00" step="0.01">
+    </div>
+
+    <label>Son Ödəniş Tarixi (istəyə bağlı)</label>
+    <input type="date" id="debt-due">
+
+    <label>Qeyd</label>
+    <input type="text" id="debt-note" placeholder="Məsələn: Telefon üçün...">
+
+    <button class="modal-submit" onclick="submitDebt()">Qeyd Et</button>
+  </div>
+</div>
+
+<!-- GOAL MODAL -->
+<div class="modal-backdrop" id="goal-modal" onclick="if(event.target===this) closeGoalModal()">
+  <div class="modal-sheet">
+    <button class="modal-close" onclick="closeGoalModal()">✕</button>
+    <h3>Yeni Maliyyə Hədəfi</h3>
+
+    <label>Hədəfin adı</label>
+    <input type="text" id="goal-name" placeholder="Məsələn: Ehtiyat fond, Telefon, Toy...">
+
+    <label>Hədəf Məbləği (₼)</label>
+    <input type="number" id="goal-target" inputmode="decimal" placeholder="0.00" step="0.01">
+
+    <label>İndiyə qədər yığılan (₼ — istəyə bağlı)</label>
+    <input type="number" id="goal-current" inputmode="decimal" placeholder="0.00" step="0.01">
+
+    <label>Hansı kisədən izlənsin (istəyə bağlı)</label>
+    <select id="goal-bucket"></select>
+
+    <button class="modal-submit" onclick="submitGoal()">Hədəfi Yarat</button>
+  </div>
+</div>
+
+<!-- RECURRING MODAL -->
+<div class="modal-backdrop" id="recurring-modal" onclick="if(event.target===this) closeRecurringModal()">
+  <div class="modal-sheet">
+    <button class="modal-close" onclick="closeRecurringModal()">✕</button>
+    <h3>Yeni Təkrarlanan Xərc</h3>
+
+    <label>Adı</label>
+    <input type="text" id="rec-name" placeholder="Məsələn: Ev kirayəsi, Netflix...">
+
+    <label>Məbləğ (₼)</label>
+    <input type="number" id="rec-amount" inputmode="decimal" placeholder="0.00" step="0.01">
+
+    <label>Ayın Hansı Günü</label>
+    <input type="number" id="rec-day" min="1" max="28" placeholder="məsələn: 1">
+
+    <label>Hansı Kisədən</label>
+    <select id="rec-bucket"></select>
+
+    <button class="modal-submit" onclick="submitRecurring()">Yarat</button>
+  </div>
+</div>
+
+<script>
+/* ============== DATA MODEL ==============
+  localStorage keys:
+  - xz_transactions : array of {id, type:'in'|'out', amount, note, bucketId, ts}
+  - xz_buckets : array of {id, name, icon, pct}
+  - xz_journal : array of {id, text, ts}
+  - xz_debts : array of {id, type:'owe'|'owed', person, amount, note, dueDate, ts, settled, settledTs, interestRate, minPayment}
+  - xz_goals : array of {id, name, target, current, bucketId, ts}
+  - xz_recurring : array of {id, name, amount, day, bucketId, ts, lastAppliedMonth}
+  - xz_pin : string (4-digit PIN) or null
+  - xz_strategy : 'snowball' | 'avalanche'
+*/
+
+/* Mənəvi yol göstərici — Müqəddəs Kitab ayələri, Azərbaycan dilindəki rəsmi tərcümə əsasında (Müqəddəs Kitab Cəmiyyəti, 2008) */
+const AYAHS = [
+  {
+    ref: 'Matta 6:19-21',
+    text: '“Yer üzündə özünüzə xəzinələr yığmayın. Orada güvə və pas onları məhv edər ya da oğrular girib oğurlayar. Bunun yerinə özünüzə göydə xəzinələr yığın... Çünki xəzinən haradadırsa, ürəyin də orada olacaq.”',
+    lesson: 'Pul özü məqsəd deyil, vasitədir. Əmanətə qoyduğun pay sənin nəyə dəyər verdiyini göstərir — bu tətbiqdəki "Xəzinə" kisəsi də elə bu prinsipdən adını alır.'
+  },
+  {
+    ref: 'Luka 16:10-11',
+    text: '“Ən balaca bir işdə sadiq olan kəs böyük işdə də sadiqdir... Əgər siz haqsız sərvətdən istifadə etməkdə sadiq olmadınızsa, əsl var-dövləti sizə kim əmanət edər?”',
+    lesson: 'Kiçik məbləğlərdə intizamlı olmaq, böyük məbləğləri idarə etmənin məşqidir. Hər manatı qeyd etmək — gələcəkdə sənə əmanət ediləcək daha böyük məsuliyyətin sınağıdır.'
+  },
+  {
+    ref: 'Luka 14:28',
+    text: '“Sizlərdən kimsə bir qüllə tikmək istəyirsə, əvvəlcə oturub onun xərclərini hesablamaz ki, görsün onu qurtarmaq üçün pulu çatacaq ya yox?”',
+    lesson: 'Planlaşdırma — sadəcə praktiklik deyil, müdriklikdir. Xərcini əvvəlcədən hesablamayan, işini yarımçıq qoyar. Büdcə qurmaq da elə bu "əvvəlcə hesabla" prinsipidir.'
+  },
+  {
+    ref: '1 Timoteyə 6:9-10',
+    text: '“Varlanmaq istəyənlər şirniklənib tələyə düşürlər... Hər cür pisliyin kökü pulpərəstlikdir. Bəziləri bu sevdaya düşərək imandan azaraq özlərini bir çox kədərlərə düçar etmişlər.”',
+    lesson: 'Xəbərdarlıq pulun özünə deyil, ona olan həsrətə qarşıdır. Büdcə qurmaq səni pulun ardınca qaçmaqdan qorur — çünki nəyin kifayət etdiyini əvvəlcədən bilirsən.'
+  },
+  {
+    ref: 'Süleymanın Məsəlləri 22:4',
+    text: '“Təvazökarlığın və Rəbb qorxusunun nəticəsi sərvət, şərəf, həyatdır.”',
+    lesson: 'Sərvət təkbaşına hədəf deyil, təvazökar və düzgün həyatın nəticəsidir. Səbrlə, dürüst yolla qurulan maliyyə vərdişi — tələsik qazancdan daha dəyərlidir.'
+  },
+  {
+    ref: 'Süleymanın Məsəlləri 10:22',
+    text: '“Rəbbin xeyir-duası insana sərvət gətirər, daha ona qüssə verməz.”',
+    lesson: 'Düzgün qazanılan və düzgün idarə olunan pul insanı narahat etmir, sakitlik gətirir. Borc və qarışıq maliyyə isə əksinə, qüssə gətirir — bu tətbiqdəki nizam elə bunun üçündür.'
+  },
+  {
+    ref: 'Luka 12:33-34',
+    text: '“Mal-mülkünüzü satıb sədəqə verin. Özünüzə köhnəlməyən pul kisələri, göylərdə tükənməyən bir xəzinə hazırlayın.”',
+    lesson: 'Verməkdən qorxma. Bölgündə bir pay başqasına kömək üçün ayırmaq — pulu itirmək deyil, onu ən dəyərli yerə yönəltməkdir.'
+  },
+  {
+    ref: 'Süleymanın Məsəlləri 21:5',
+    text: '“Çalışqanın niyyəti xeyir gətirər, tələsən ehtiyac içinə düşər.”',
+    lesson: 'Tələsik, plansız maliyyə qərarları adətən geri təpər. Büdcəni əvvəlcədən, səbrlə qurmaq — tələsik qərarlardan qat-qat etibarlıdır.'
+  },
+  {
+    ref: 'Süleymanın Məsəlləri 10:4-5',
+    text: '“Tənbəlin əlləri onu yoxsullaşdırar, çalışqanın əli sərvət qazanar. Ağıllı oğul yayda məhsul yığar, biçin vaxtı yatan oğul rüsvay olar.”',
+    lesson: 'Bolluq zamanı (yayda) yığmaq, qıtlıq zamanı (qışda) xilas edir. Ehtiyat fondun da elə buna xidmət edir — bu günün intizamı sabahın təminatıdır.'
+  },
+  {
+    ref: 'Matta 6:31-34',
+    text: '“Beləliklə, “Nə yeyəcəyik?”, “Nə içəcəyik?” deyə qayğı çəkməyin... əvvəlcə Allahın Padşahlığını və Onun salehliyini axtarın. Onda bunların hamısı sizə əlavə olaraq veriləcək. Beləliklə, sabahın qayğısını çəkməyin.”',
+    lesson: 'Maliyyə narahatlığı təbiidir, amma idarə oluna bilər. Aydın bir sistem qurduqdan sonra hər gün yenidən həyəcanlanmağa ehtiyac qalmır — bu tətbiq də elə "sabahın qayğısını" sistemləşdirmək üçündür.'
+  },
+  {
+    ref: 'Filippilərə 4:6-7, 19',
+    text: '“Heç nəyin qayğısını çəkməyin, amma hər barədə xahişlərinizi Allaha dualarla, yalvarışlarla, şükür edə-edə bildirin... Sizin hər ehtiyacınızı isə Allahım Məsih İsada olan Öz izzətli zənginliyinə görə ödəyəcək.”',
+    lesson: 'Maliyyə təşvişini dua və şükürlə qarşılamaq, sadəcə rəqəmlərə baxmaqdan fərqlidir. Nəyə malik olduğuna şükür etmək, daim çatışmazlıq hissini azaldır.'
+  }
+];
+
+const DEFAULT_BUCKETS = [
+  { id:'vault',    name:'Xəzinə (Əmanət)',    icon:'🔒', pct:10 },
+  { id:'living',   name:'Gündəlik Yaşayış',   icon:'🍞', pct:50 },
+  { id:'growth',   name:'İnkişaf/Təhsil',     icon:'📈', pct:10 },
+  { id:'play',     name:'Sərbəst (İstək)',    icon:'🎉', pct:20 },
+  { id:'give',     name:'Ondalıq/Pay',        icon:'🤲', pct:10 },
+];
+
+/* What goes into each category — shown when the person taps a bucket */
+const CATEGORY_INFO = {
+  vault: {
+    desc: 'Bu pul xərclənmir. Toxunma. Məqsədi sənin gələcəyini qorumaqdır — nə qədər kiçik olsa da, hər ay buraya bir şey düşməlidir.',
+    examples: ['Bank əmanət hesabı', 'Ehtiyat fond (işsizlik, xəstəlik üçün)', 'Qızıl, valyuta kimi uzunmüddətli saxlama', 'Pensiya/investisiya hesabı']
+  },
+  living: {
+    desc: 'Yaşaman üçün məcburi xərclər — bunlar olmasa yaşaya bilmirsən. İstək deyil, ehtiyacdır.',
+    examples: ['Ev kirayəsi / kommunal', 'Yemək-bazarlıq', 'Nəqliyyat (bənzin, metro)', 'Telefon/internet abunəsi', 'Dərman, sağlamlıq']
+  },
+  growth: {
+    desc: 'Səni gələcəkdə daha çox qazandıracaq xərclər. Bu, xərc kimi görünsə də, əslində özünə investisiyadır.',
+    examples: ['Kurs, sertifikat', 'Kitab, onlayn təlim', 'İş üçün avadanlıq/proqram', 'Şəbəkə qurma (görüş, konfrans)', 'Biznes üçün ilk kapital']
+  },
+  play: {
+    desc: 'İstədiyin, amma məcburi olmayan xərclər. Bu pulu xərcləməkdən günah hissi duymamalısan — büdcəyə daxildir.',
+    examples: ['Restoran, kafe', 'Geyim (lazımdan artıq)', 'Əyləncə, kino, oyun', 'Səyahət', 'Hobbilər']
+  },
+  give: {
+    desc: 'Başqasına verdiyin pay — kilsəyə ondalıq, ehtiyacı olana kömək, ya da ailənə dəstək. Bu, gəlirinin ilk və sabit ayrılan hissəsi olmalıdır, qalandan artıq qalan deyil.',
+    examples: ['Kilsəyə ondalıq (10%)', 'Ailəyə maddi kömək', 'Ehtiyacı olana bağış', 'Missiya və xeyriyyə dəstəyi']
+  },
+  needs: {
+    desc: 'Yaşamaq üçün məcburi xərclər.',
+    examples: ['Kirayə, kommunal', 'Yemək', 'Nəqliyyat', 'Sağlamlıq']
+  },
+  wants: {
+    desc: 'İstədiyin, lakin məcburi olmayan xərclər.',
+    examples: ['Restoran', 'Əyləncə', 'Geyim', 'Səyahət']
+  },
+  free: {
+    desc: 'Əmanətdən kənar qalan bütün pulun — istənilən şəkildə xərcləyə bilərsən, amma şüurlu ol.',
+    examples: ['Gündəlik xərclər', 'İstəklər', 'Gözlənilməz xərclər']
+  },
+  other: {
+    desc: 'Heç bir kateqoriyaya düz gəlməyən xərclər.',
+    examples: ['Təsnif olunmamış xərclər']
+  }
+};
+function getCatInfo(id, fallbackName){
+  return CATEGORY_INFO[id] || { desc: `${fallbackName} üçün ayrılan pul.`, examples: [] };
+}
+
+const PRESETS = [
+  {
+    name: '10% Qızıl Qayda',
+    desc: 'Hər gəlirin 10%-i toxunulmaz əmanətə. Qalan 90% sərbəst.',
+    buckets: [
+      { id:'vault', name:'Xəzinə (Əmanət)', icon:'🔒', pct:10 },
+      { id:'free', name:'Sərbəst Pul', icon:'💼', pct:90 },
+    ]
+  },
+  {
+    name: '50/30/20',
+    desc: 'Ehtiyac 50%, istək 30%, əmanət+borc 20%.',
+    buckets: [
+      { id:'needs', name:'Ehtiyaclar', icon:'🍞', pct:50 },
+      { id:'wants', name:'İstəklər', icon:'🎉', pct:30 },
+      { id:'vault', name:'Xəzinə (Əmanət)', icon:'🔒', pct:20 },
+    ]
+  },
+  {
+    name: 'Tələbə Bölgüsü',
+    desc: 'Yaşayış 60%, əyləncə 15%, əmanət 15%, kitab/kurs 10%.',
+    buckets: [
+      { id:'living', name:'Yaşayış', icon:'🍞', pct:60 },
+      { id:'play', name:'Əyləncə', icon:'🎉', pct:15 },
+      { id:'vault', name:'Xəzinə (Əmanət)', icon:'🔒', pct:15 },
+      { id:'growth', name:'Təhsil/Kurs', icon:'📈', pct:10 },
+    ]
+  }
+];
+
+const TEACHINGS = [
+  {
+    title: 'Əvvəlcə özünə ödə',
+    body: 'Pul əlinə keçən kimi ilk iş kimsəyə borc ödəmək yox, özünə pay ayırmaqdır. Maaş gələn kimi, hər şeydən əvvəl 10%-i kənara qoy — bunu görməmiş kimi davran. Qalanını sonra xərclə. Sərvətli ailələrin əsas qaydası budur: gəlirin bir hissəsi heç vaxt "xərc üçün" sayılmır.'
+  },
+  {
+    title: 'Əmanət toxunulmazdır',
+    body: 'Kənara qoyulan pul "ehtiyat" deyil, "var olmayan" pul kimi düşünülməlidir. Bu pulu xərclədiyin an, bütün sistem dağılır. Fərqli bank hesabında saxla, ya da heç görmədiyin bir yerdə — beyninə "bu mənim xərc pulum deyil" siqnalı ver.'
+  },
+  {
+    title: 'Borc — qazanc üçün, israf üçün yox',
+    body: 'Sərvət saxlayan icmalar borcu iki yerə bölür: "yaxşı borc" (gəlir gətirən, məsələn iş üçün avadanlıq) və "pis borc" (sadəcə xərclənən, məsələn telefon kreditə). Pis borcdan uzaq dur. Əgər borc alırsansa, o pul sənə geri daha çox pul qaytarmalıdır.'
+  },
+  {
+    title: 'Pulun sürətini izlə, məbləğini yox',
+    body: '100 manat əlində nə qədər qalır? Əgər hər ay 100 gəlib 100 gedirsə, məbləğ böyük olsa da sən sıfırdasan. Sual "neçə qazanırsan" deyil, "qazandığının neçə faizi əlində qalır"dır. Buna görə faizlərlə düşünmək məbləğlə düşünməkdən üstündür.'
+  },
+  {
+    title: 'Hər xərcin adı olsun',
+    body: 'Naməlum xərc — nəzarətdən çıxmış xərcdir. Hər manatın hara getdiyini kateqoriyalaşdır: yaşayış, istək, inkişaf. Ay sonunda "pul hara getdi?" sualını vermək əvəzinə, əvvəlcədən "bu pul hara gedəcək?" sualını ver.'
+  },
+  {
+    title: 'Aktiv gəlir vs passiv gəlir',
+    body: 'İşləyərək qazandığın pul "aktiv gəlir"dir — sən dayansan, pul da dayanır. Sərvət qurmaq aktiv gəliri passiv gəlirə (icarə, pay, faiz, biznes) çevirmək məsələsidir. Əmanətindən bir hissəni "məni gələcəkdə pul qazandıracaq bir şeyə" yönəltməyi düşün.'
+  },
+  {
+    title: 'Şəbəkə sərvətin bir hissəsidir',
+    body: 'Tarixən sərvətli icmalar bir-birinə kömək, məsləhət və imkan ötürməklə tanınıb. Tək basqına çıxmaq əvəzinə, bilik və imkanı bölüşən insanlarla əlaqədə ol. Sədəqə/pay xərci də elə buna görə bölgüdə yer alır — həm əxlaqi, həm də şəbəkə qurma mənası var.'
+  },
+  {
+    title: 'Kiçik sızmalar gəmini batırır',
+    body: 'Böyük bir xərc nadir hallarda büdcəni dağıdır. Onu adətən gündəlik kiçik, "əhəmiyyətsiz" xərclər edir — bir kofe, bir taksi, bir abunəlik. Ayın sonunda kiçik xərclərin cəmini gör, təəccüblənəcəksən.'
+  },
+  {
+    title: 'Müqayisə sənin düşmənindir',
+    body: 'Başqasının həyat tərzinə görə xərcləmə qərarı vermə. Sərvət sakit, görünməz şəkildə qurulur — çoxları "varlı görünmək" üçün xərcləyib, əslində kasıb qalır. Əsl sual: "bu xərc mənim öz hədəfimə xidmət edir, yoxsa kiminsə diqqətinə?"'
+  },
+  {
+    title: 'Bazar enəndə qorxma, bil',
+    body: 'Pul itirmək qorxusu insanları ya hər şeyi xərcləməyə, ya da heç nəyə qoymamağa sürükləyir. Sərvətli ailələr riski bilik ilə idarə edir: anlamadığın şeyə pul qoyma, amma öyrənməkdən də qaçma. Əmanətinin bir hissəsi "öyrənmək" üçün ayrıla bilər — kitab, kurs, məsləhət.'
+  },
+  {
+    title: 'Hər qazanc bayram deyil',
+    body: 'Gözlənilməz pul gələndə (bonus, hədiyyə, satış) — ilk instinkt xərcləməkdir. Sərvət qoruyan zehniyyət əksinədir: gözlənilməz pulun böyük faizi əmanətə, ya da borc azaltmağa gedir. Adi gəlirini necə xərclədiyini dəyişmə, sadəcə əlavə pulu sistemə uyğun böl.'
+  },
+  {
+    title: 'Nəsildən nəsilə keçən bilik',
+    body: 'Sərvət təkcə pul deyil, ailədə danışılan vərdişdir. Uşaqlara pul haqqında açıq danışmaq, onlara qənaət, bölgü, səbr öyrətmək — bu, gələcək nəsillərin sərvətini qoruyur. Bu tətbiqdəki "Qeydlər" bölməsi də elə bunun üçündür: öyrəndiyini yazıb saxla, sonra başqasına da öyrət.'
+  }
+];
+
+let txs = JSON.parse(localStorage.getItem('xz_transactions') || '[]');
+let buckets = JSON.parse(localStorage.getItem('xz_buckets') || 'null') || DEFAULT_BUCKETS.map(b=>({...b}));
+let journal = JSON.parse(localStorage.getItem('xz_journal') || '[]');
+let debts = JSON.parse(localStorage.getItem('xz_debts') || '[]');
+let goals = JSON.parse(localStorage.getItem('xz_goals') || '[]');
+let recurring = JSON.parse(localStorage.getItem('xz_recurring') || '[]');
+let savedPin = localStorage.getItem('xz_pin') || null;
+let payoffStrategy = localStorage.getItem('xz_strategy') || 'snowball';
+let currentTxType = 'in';
+let currentDebtType = 'owe';
+let selectedCat = null;
+let teachingIdx = 0;
+let ayahIdx = 0;
+let debtTab = 'owe';
+let charts = {};
+let pinEntry = '';
+let pinMode = 'unlock'; // 'unlock' | 'setup' | 'confirm'
+let pinFirstEntry = '';
+
+function save(){
+  localStorage.setItem('xz_transactions', JSON.stringify(txs));
+  localStorage.setItem('xz_buckets', JSON.stringify(buckets));
+  localStorage.setItem('xz_journal', JSON.stringify(journal));
+  localStorage.setItem('xz_debts', JSON.stringify(debts));
+  localStorage.setItem('xz_goals', JSON.stringify(goals));
+  localStorage.setItem('xz_recurring', JSON.stringify(recurring));
+}
+
+function fmt(n){
+  return Number(n).toLocaleString('az-AZ', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  if(name==='setup') renderSetup();
+  if(name==='lessons') renderLessons();
+  if(name==='history') renderHistory();
+  if(name==='stats') renderStats();
+  if(name==='debts') renderDebts();
+  if(name==='settings') renderSettings();
+  window.scrollTo(0,0);
+}
+
+/* ---------- BUCKET BALANCE CALC ---------- */
+function bucketBalance(bucketId){
+  return txs.filter(t=>t.bucketId===bucketId).reduce((s,t)=> s + (t.type==='in'? t.amount : -t.amount), 0);
+}
+
+function totalFreeBalance(){
+  // sum of all non-vault-like... actually just sum everything for the headline
+  let inSum = txs.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+  let outSum = txs.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+  return {inSum, outSum, net: inSum-outSum};
+}
+
+/* ---------- RENDER HOME ---------- */
+function renderHome(){
+  const {inSum, outSum, net} = totalFreeBalance();
+  const vaultBucket = buckets.find(b=>b.id==='vault');
+  const vaultBal = vaultBucket ? bucketBalance('vault') : 0;
+  const spendable = net - vaultBal;
+
+  const wholePart = Math.trunc(spendable);
+  const centsPart = Math.abs(Math.round((Math.abs(spendable) - Math.abs(wholePart)) * 100));
+  const sign = spendable < 0 ? '−' : '';
+  document.getElementById('bal-figure').innerHTML =
+    sign + Math.abs(wholePart).toLocaleString('az-AZ') + '<span class="cents mono">.' + String(centsPart).padStart(2,'0') + ' ₼</span>';
+  document.getElementById('sum-in').textContent = fmt(inSum);
+  document.getElementById('sum-out').textContent = fmt(outSum);
+  document.getElementById('vault-amt').textContent = fmt(vaultBal) + ' ₼';
+
+  document.getElementById('vault-strip').style.display = vaultBucket ? 'flex' : 'none';
+
+  const list = document.getElementById('bucket-list');
+  list.innerHTML = '';
+  buckets.forEach(b=>{
+    const bal = bucketBalance(b.id);
+    const allocated = inSum * (b.pct/100);
+    const used = allocated - bal;
+    const usedPct = allocated>0 ? Math.min(100, Math.max(0,(used/allocated)*100)) : 0;
+    const isOverBudget = bal < 0;
+    const row = document.createElement('div');
+    row.className = 'bucket-row';
+    row.style.cursor = 'pointer';
+    row.onclick = ()=> openCatDetail(b.id);
+    row.innerHTML = `
+      <div class="b-icon">${b.icon}</div>
+      <div class="b-info">
+        <div class="b-name">${b.name}${isOverBudget ? '<span class="budget-warn-badge">LİMİT AŞILDI</span>' : ''}</div>
+        <div class="b-meta">${b.pct}% — gəlirdən ayrılan pay</div>
+        <div class="b-bar"><div class="b-bar-fill ${bal<0?'over':''}" style="width:${bal<0?100:usedPct}%"></div></div>
+      </div>
+      <div class="b-amt">
+        <div class="num mono" style="color:${bal<0?'var(--red)':'var(--gold-bright)'}">${fmt(bal)} ₼</div>
+        <div class="pct">qalıq</div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  const recent = document.getElementById('recent-list');
+  const recentTxs = [...txs].sort((a,b)=>b.ts-a.ts).slice(0,5);
+  recent.innerHTML = '';
+  if(recentTxs.length===0){
+    recent.innerHTML = `<div class="empty-note">Hələ heç bir hərəkət qeyd olunmayıb.<br>Aşağıdaki <b>+</b> düyməsi ilə ilk gəlir və ya xərcini əlavə et.</div>`;
+  } else {
+    recentTxs.forEach(t=> recent.appendChild(txRowEl(t)));
+  }
+}
+
+function txRowEl(t){
+  const bucket = buckets.find(b=>b.id===t.bucketId);
+  const row = document.createElement('div');
+  row.className = 'tx-row';
+  const date = new Date(t.ts);
+  const dateStr = date.toLocaleDateString('az-AZ', {day:'2-digit', month:'short'});
+  row.innerHTML = `
+    <div class="t-icon">${t.type==='in' ? '↓' : (bucket? bucket.icon : '↑')}</div>
+    <div class="t-info">
+      <div class="t-name">${t.note || (t.type==='in'?'Gəlir':'Xərc')}</div>
+      <div class="t-meta">${dateStr} ${bucket && t.type==='out' ? '· '+bucket.name : ''}</div>
+    </div>
+    <div class="t-amt ${t.type==='in'?'in':'out'}">${t.type==='in'?'+':'−'}${fmt(t.amount)}</div>
+    <button class="t-del" onclick="deleteTx(${t.id})">✕</button>
+  `;
+  return row;
+}
+
+/* ---------- CATEGORY DETAIL MODAL ---------- */
+function openCatDetail(bucketId){
+  const b = buckets.find(x=>x.id===bucketId);
+  if(!b) return;
+  const info = getCatInfo(bucketId, b.name);
+  document.getElementById('cd-title').textContent = b.icon + '  ' + b.name;
+  document.getElementById('cd-desc').textContent = info.desc;
+  const exWrap = document.getElementById('cd-examples');
+  if(info.examples && info.examples.length){
+    exWrap.innerHTML = '<div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--bone-dim); margin-bottom:8px;">Bura nə qoyulur?</div>' +
+      info.examples.map(e=>`<div class="ce-item">${e}</div>`).join('');
+  } else {
+    exWrap.innerHTML = '';
+  }
+  document.getElementById('cd-balance').textContent = fmt(bucketBalance(bucketId)) + ' ₼';
+  document.getElementById('cat-detail-modal').classList.add('show');
+}
+function closeCatDetail(){
+  document.getElementById('cat-detail-modal').classList.remove('show');
+}
+
+function renderHistory(){
+  const full = document.getElementById('full-list');
+  const sorted = [...txs].sort((a,b)=>b.ts-a.ts);
+  full.innerHTML = '';
+  if(sorted.length===0){
+    full.innerHTML = `<div class="empty-note">Hələ heç bir hərəkət yoxdur.</div>`;
+  } else {
+    sorted.forEach(t=> full.appendChild(txRowEl(t)));
+  }
+}
+
+function deleteTx(id){
+  txs = txs.filter(t=>t.id!==id);
+  save();
+  renderHome();
+  renderHistory();
+}
+
+/* ---------- TX MODAL ---------- */
+const CATS = [
+  {id:'living', name:'Yaşayış', icon:'🍞'},
+  {id:'growth', name:'İnkişaf', icon:'📈'},
+  {id:'play', name:'İstək', icon:'🎉'},
+  {id:'give', name:'Pay/Sədəqə', icon:'🤲'},
+  {id:'vault', name:'Əmanət', icon:'🔒'},
+  {id:'other', name:'Digər', icon:'•'},
+];
+
+function openTxModal(){
+  document.getElementById('tx-modal').classList.add('show');
+  setTxType('in');
+  document.getElementById('tx-amount').value='';
+  document.getElementById('tx-note').value='';
+  buildCatGrid();
+}
+function closeTxModal(){
+  document.getElementById('tx-modal').classList.remove('show');
+}
+function setTxType(type){
+  currentTxType = type;
+  document.getElementById('type-in-btn').className = type==='in' ? 'sel-in' : '';
+  document.getElementById('type-out-btn').className = type==='out' ? 'sel-out' : '';
+  document.getElementById('tx-cat-wrap').style.display = type==='out' ? 'block' : 'none';
+}
+function buildCatGrid(){
+  const grid = document.getElementById('tx-cat-grid');
+  grid.innerHTML = '';
+  selectedCat = null;
+  // use actual user buckets if available, fallback to CATS
+  const source = buckets.length ? buckets.map(b=>({id:b.id,name:b.name.split(' ')[0],icon:b.icon})) : CATS;
+  source.forEach(c=>{
+    const btn = document.createElement('button');
+    btn.innerHTML = `<span class="ci">${c.icon}</span>${c.name}`;
+    btn.onclick = ()=>{
+      grid.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      selectedCat = c.id;
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function submitTx(){
+  const amount = parseFloat(document.getElementById('tx-amount').value);
+  const note = document.getElementById('tx-note').value.trim();
+  if(!amount || amount<=0){
+    alert('Zəhmət olmasa düzgün məbləğ daxil et.');
+    return;
+  }
+
+  if(currentTxType === 'in'){
+    // distribute across buckets automatically
+    buckets.forEach(b=>{
+      txs.push({
+        id: Date.now() + Math.random(),
+        type: 'in',
+        amount: +(amount * (b.pct/100)).toFixed(2),
+        note: note ? note + ' — ' + b.name : b.name + ' payı',
+        bucketId: b.id,
+        ts: Date.now()
+      });
+    });
+  } else {
+    txs.push({
+      id: Date.now() + Math.random(),
+      type: 'out',
+      amount: amount,
+      note: note,
+      bucketId: selectedCat || (buckets[0] ? buckets[0].id : 'other'),
+      ts: Date.now()
+    });
+  }
+
+  save();
+  closeTxModal();
+  renderHome();
+}
+
+/* ---------- SETUP / SPLIT VIEW ---------- */
+function renderSetup(){
+  const list = document.getElementById('split-setup-list');
+  list.innerHTML = '';
+  buckets.forEach((b, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'split-row';
+    row.innerHTML = `
+      <div class="b-icon" style="width:30px;height:30px;font-size:14px;">${b.icon}</div>
+      <div class="sr-name">${b.name}</div>
+      <input type="number" min="0" max="100" value="${b.pct}" data-idx="${idx}" class="split-pct-input">
+      <span style="color:var(--bone-dim); font-size:13px;">%</span>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.split-pct-input').forEach(inp=>{
+    inp.addEventListener('input', updateSplitTotal);
+  });
+  updateSplitTotal();
+
+  const presetList = document.getElementById('preset-list');
+  presetList.innerHTML = '';
+  PRESETS.forEach(p=>{
+    const card = document.createElement('div');
+    card.className = 'teaching-card';
+    card.style.cursor='pointer';
+    card.innerHTML = `
+      <div class="tc-title" style="font-size:15px;">${p.name}</div>
+      <div class="tc-body">${p.desc}</div>
+    `;
+    card.onclick = ()=>{
+      if(confirm(`"${p.name}" şablonunu tətbiq etmək istəyirsən? Mövcud bölgülərin əvəzlənəcək.`)){
+        buckets = p.buckets.map(b=>({...b}));
+        save();
+        renderSetup();
+        renderHome();
+      }
+    };
+    presetList.appendChild(card);
+  });
+
+  renderGoals();
+  renderRecurring();
+}
+
+function updateSplitTotal(){
+  const inputs = document.querySelectorAll('.split-pct-input');
+  let total = 0;
+  inputs.forEach(i=> total += (parseFloat(i.value)||0));
+  const msg = document.getElementById('split-total-msg');
+  if(Math.round(total) === 100){
+    msg.innerHTML = `<div class="split-total-ok">Cəmi: ${total}% — düzgündür ✓</div>`;
+  } else {
+    msg.innerHTML = `<div class="split-total-warn">Cəmi: ${total}% — 100% olmalıdır</div>`;
+  }
+}
+
+document.getElementById('split-save-btn').addEventListener('click', ()=>{
+  const inputs = document.querySelectorAll('.split-pct-input');
+  let total = 0;
+  inputs.forEach(i=> total += (parseFloat(i.value)||0));
+  if(Math.round(total) !== 100){
+    alert('Faizlərin cəmi 100% olmalıdır. Hazırda: ' + total + '%');
+    return;
+  }
+  inputs.forEach(i=>{
+    buckets[+i.dataset.idx].pct = parseFloat(i.value)||0;
+  });
+  save();
+  renderHome();
+  alert('Bölgün yadda saxlanıldı.');
+});
+
+/* ---------- GOALS ---------- */
+function renderGoals(){
+  const wrap = document.getElementById('goals-list');
+  wrap.innerHTML = '';
+  if(goals.length===0){
+    wrap.innerHTML = `<div class="empty-note">Hələ hədəf qoyulmayıb. Məsələn "3 ayda 500₼ ehtiyat fond" kimi konkret bir məqsəd yarat.</div>`;
+    return;
+  }
+  goals.forEach(g=>{
+    const bucketBal = g.bucketId ? bucketBalance(g.bucketId) : null;
+    const current = g.bucketId ? Math.max(0, bucketBal) : g.current;
+    const pct = g.target>0 ? Math.min(100, (current/g.target)*100) : 0;
+    const card = document.createElement('div');
+    card.className = 'debt-card';
+    card.innerHTML = `
+      <div class="dc-top">
+        <div style="flex:1;">
+          <div class="dc-name">${g.name}</div>
+          <div class="dc-meta">${fmt(current)} ₼ / ${fmt(g.target)} ₼ — ${pct.toFixed(0)}%</div>
+          <div class="b-bar" style="margin-top:8px;"><div class="b-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+      <div class="dc-actions">
+        ${!g.bucketId ? `<button onclick="addToGoal(${g.id})">+ Pul Əlavə Et</button>` : ''}
+        <button onclick="deleteGoal(${g.id})">Sil</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+function openGoalModal(){
+  document.getElementById('goal-modal').classList.add('show');
+  document.getElementById('goal-name').value='';
+  document.getElementById('goal-target').value='';
+  document.getElementById('goal-current').value='';
+  const sel = document.getElementById('goal-bucket');
+  sel.innerHTML = '<option value="">— İzləmə (əl ilə daxil edirəm) —</option>' +
+    buckets.map(b=>`<option value="${b.id}">${b.icon} ${b.name}</option>`).join('');
+}
+function closeGoalModal(){
+  document.getElementById('goal-modal').classList.remove('show');
+}
+function submitGoal(){
+  const name = document.getElementById('goal-name').value.trim();
+  const target = parseFloat(document.getElementById('goal-target').value);
+  const current = parseFloat(document.getElementById('goal-current').value) || 0;
+  const bucketId = document.getElementById('goal-bucket').value || null;
+  if(!name || !target || target<=0){
+    alert('Zəhmət olmasa hədəf adı və düzgün məbləğ daxil et.');
+    return;
+  }
+  goals.push({ id: Date.now()+Math.random(), name, target, current, bucketId, ts: Date.now() });
+  save();
+  closeGoalModal();
+  renderGoals();
+}
+function addToGoal(id){
+  const g = goals.find(x=>x.id===id);
+  if(!g) return;
+  const amt = parseFloat(prompt('Neçə manat əlavə edək?', '0'));
+  if(!amt || amt<=0) return;
+  g.current = (g.current||0) + amt;
+  save();
+  renderGoals();
+}
+function deleteGoal(id){
+  goals = goals.filter(g=>g.id!==id);
+  save();
+  renderGoals();
+}
+
+/* ---------- RECURRING EXPENSES ---------- */
+function renderRecurring(){
+  const wrap = document.getElementById('recurring-list');
+  wrap.innerHTML = '';
+  checkDueRecurring();
+  if(recurring.length===0){
+    wrap.innerHTML = `<div class="empty-note">Hələ təkrarlanan xərc qurulmayıb.</div>`;
+    return;
+  }
+  const todayDay = new Date().getDate();
+  recurring.forEach(r=>{
+    const b = buckets.find(x=>x.id===r.bucketId);
+    const monthKey = new Date().getFullYear()+'-'+new Date().getMonth();
+    const appliedThisMonth = r.lastAppliedMonth === monthKey;
+    const card = document.createElement('div');
+    card.className = 'debt-card';
+    card.innerHTML = `
+      <div class="dc-top">
+        <div>
+          <div class="dc-name">${r.name}</div>
+          <div class="dc-meta">Hər ayın ${r.day}-i ${b ? '· '+b.icon+' '+b.name : ''}</div>
+          ${appliedThisMonth ? '<div style="font-size:11px;color:var(--green);margin-top:4px;">✓ Bu ay tətbiq olunub</div>' : ''}
+        </div>
+        <div class="dc-amt owe">${fmt(r.amount)} ₼</div>
+      </div>
+      <div class="dc-actions">
+        <button onclick="deleteRecurring(${r.id})">Sil</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+function checkDueRecurring(){
+  const now = new Date();
+  const monthKey = now.getFullYear()+'-'+now.getMonth();
+  const today = now.getDate();
+  let changed = false;
+  recurring.forEach(r=>{
+    if(r.lastAppliedMonth !== monthKey && today >= r.day){
+      const overdue = confirm(`"${r.name}" (${fmt(r.amount)} ₼) bu ay üçün xərc kimi qeyd olunsun?`);
+      if(overdue){
+        txs.push({ id: Date.now()+Math.random(), type:'out', amount:r.amount, note:r.name+' (təkrarlanan)', bucketId:r.bucketId, ts: Date.now() });
+        changed = true;
+      }
+      r.lastAppliedMonth = monthKey;
+      changed = true;
+    }
+  });
+  if(changed) save();
+}
+
+function openRecurringModal(){
+  document.getElementById('recurring-modal').classList.add('show');
+  document.getElementById('rec-name').value='';
+  document.getElementById('rec-amount').value='';
+  document.getElementById('rec-day').value='';
+  const sel = document.getElementById('rec-bucket');
+  sel.innerHTML = buckets.map(b=>`<option value="${b.id}">${b.icon} ${b.name}</option>`).join('');
+}
+function closeRecurringModal(){
+  document.getElementById('recurring-modal').classList.remove('show');
+}
+function submitRecurring(){
+  const name = document.getElementById('rec-name').value.trim();
+  const amount = parseFloat(document.getElementById('rec-amount').value);
+  const day = parseInt(document.getElementById('rec-day').value);
+  const bucketId = document.getElementById('rec-bucket').value;
+  if(!name || !amount || amount<=0 || !day || day<1 || day>28){
+    alert('Zəhmət olmasa bütün sahələri düzgün doldur (gün 1-28 arası olmalıdır).');
+    return;
+  }
+  recurring.push({ id: Date.now()+Math.random(), name, amount, day, bucketId, ts: Date.now(), lastAppliedMonth: null });
+  save();
+  closeRecurringModal();
+  renderRecurring();
+}
+function deleteRecurring(id){
+  recurring = recurring.filter(r=>r.id!==id);
+  save();
+  renderRecurring();
+}
+
+/* ---------- LESSONS VIEW ---------- */
+function renderLessons(){
+  renderTeachingCard();
+  renderAyahCard();
+  renderJournal();
+}
+function renderTeachingCard(){
+  const t = TEACHINGS[teachingIdx];
+  document.getElementById('teaching-card').innerHTML = `
+    <div class="tc-num mono">DƏRS ${teachingIdx+1}</div>
+    <div class="tc-title">${t.title}</div>
+    <div class="tc-body">${t.body}</div>
+  `;
+  document.getElementById('teaching-counter').textContent = `${teachingIdx+1} / ${TEACHINGS.length}`;
+}
+function nextTeaching(){ teachingIdx = (teachingIdx+1) % TEACHINGS.length; renderTeachingCard(); }
+function prevTeaching(){ teachingIdx = (teachingIdx-1+TEACHINGS.length) % TEACHINGS.length; renderTeachingCard(); }
+
+function renderAyahCard(){
+  const a = AYAHS[ayahIdx];
+  document.getElementById('ayah-card').innerHTML = `
+    <div class="tc-num mono" style="color:var(--bronze);">${a.ref}</div>
+    <div class="tc-title" style="font-style:italic; font-size:15px;">${a.text}</div>
+    <div class="tc-body">${a.lesson}</div>
+  `;
+  document.getElementById('ayah-counter').textContent = `${ayahIdx+1} / ${AYAHS.length}`;
+}
+function nextAyah(){ ayahIdx = (ayahIdx+1) % AYAHS.length; renderAyahCard(); }
+function prevAyah(){ ayahIdx = (ayahIdx-1+AYAHS.length) % AYAHS.length; renderAyahCard(); }
+
+document.getElementById('journal-save-btn').addEventListener('click', ()=>{
+  const val = document.getElementById('journal-input').value.trim();
+  if(!val) return;
+  journal.unshift({ id:Date.now(), text:val, ts:Date.now() });
+  save();
+  document.getElementById('journal-input').value='';
+  renderJournal();
+});
+
+function renderJournal(){
+  const wrap = document.getElementById('journal-entries');
+  wrap.innerHTML = '';
+  journal.forEach(j=>{
+    const d = new Date(j.ts).toLocaleDateString('az-AZ', {day:'2-digit',month:'short',year:'numeric'});
+    const el = document.createElement('div');
+    el.className = 'journal-entry';
+    el.innerHTML = `<span class="je-date mono">${d}</span>${j.text}`;
+    wrap.appendChild(el);
+  });
+}
+
+/* ---------- STATS / CHARTS VIEW ---------- */
+const CHART_COLORS = ['#C9A646','#6E8F5C','#B5503E','#8B7BA8','#4F8FA6','#C97D4E','#7A9E7E','#A65C8F'];
+
+function renderStats(){
+  const {inSum, outSum, net} = totalFreeBalance();
+  const outTxs = txs.filter(t=>t.type==='out');
+
+  // top stat cards
+  const days = txs.length ? Math.max(1, Math.ceil((Date.now() - Math.min(...txs.map(t=>t.ts))) / 86400000)) : 1;
+  const avgDaily = outSum / days;
+  const topCatId = (()=>{
+    const sums = {};
+    outTxs.forEach(t=> sums[t.bucketId] = (sums[t.bucketId]||0) + t.amount);
+    let best=null, bestVal=-1;
+    for(const k in sums){ if(sums[k]>bestVal){ bestVal=sums[k]; best=k; } }
+    return best;
+  })();
+  const topCat = buckets.find(b=>b.id===topCatId);
+  const savingsRate = inSum>0 ? ((bucketBalanceAllocated('vault')||0)/inSum*100) : 0;
+
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="sc-label">Xalis Vəziyyət</div>
+      <div class="sc-value ${net>=0?'good':'bad'}">${fmt(net)} ₼</div>
+      <div class="sc-sub">${net>=0?'Müsbət balans':'Xərc gəlirdən çoxdur'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">Gündəlik Orta Xərc</div>
+      <div class="sc-value">${fmt(avgDaily)} ₼</div>
+      <div class="sc-sub">${days} günün ortalaması</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">Ən Çox Xərclənən</div>
+      <div class="sc-value" style="font-size:15px;">${topCat ? topCat.icon+' '+topCat.name : '—'}</div>
+      <div class="sc-sub">${topCat ? fmt(bucketBalanceSpent(topCat.id))+' ₼ xərclənib' : 'Hələ xərc yoxdur'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">Əmanət Faizi</div>
+      <div class="sc-value good">${savingsRate.toFixed(1)}%</div>
+      <div class="sc-sub">Gəlirin neçə faizi qorunur</div>
+    </div>
+  `;
+
+  renderPieChart(outTxs);
+  renderLineChart();
+  renderBarChart();
+}
+
+function bucketBalanceSpent(bucketId){
+  return txs.filter(t=>t.bucketId===bucketId && t.type==='out').reduce((s,t)=>s+t.amount,0);
+}
+function bucketBalanceAllocated(bucketId){
+  const b = buckets.find(x=>x.id===bucketId);
+  if(!b) return 0;
+  const {inSum} = totalFreeBalance();
+  return inSum * (b.pct/100);
+}
+
+function renderPieChart(outTxs){
+  const sums = {};
+  outTxs.forEach(t=> sums[t.bucketId] = (sums[t.bucketId]||0) + t.amount);
+  const labels = [], values = [], colors = [];
+  Object.keys(sums).forEach((id, i)=>{
+    const b = buckets.find(x=>x.id===id);
+    labels.push(b ? b.name : id);
+    values.push(sums[id]);
+    colors.push(CHART_COLORS[i % CHART_COLORS.length]);
+  });
+
+  if(charts.pie) charts.pie.destroy();
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  if(values.length===0){
+    document.getElementById('pie-legend').innerHTML = '<div style="text-align:center; color:var(--bone-dim); font-size:12.5px; padding:10px 0;">Hələ xərc qeydi yoxdur.</div>';
+    return;
+  }
+  charts.pie = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets:[{ data: values, backgroundColor: colors, borderColor: '#1C1B17', borderWidth:2 }] },
+    options: {
+      plugins:{ legend:{ display:false } },
+      cutout: '62%'
+    }
+  });
+
+  const total = values.reduce((a,b)=>a+b,0);
+  document.getElementById('pie-legend').innerHTML = labels.map((l,i)=>{
+    const pct = total>0 ? (values[i]/total*100).toFixed(0) : 0;
+    return `<div class="legend-row"><span class="lg-dot" style="background:${colors[i]}"></span><span class="lg-name">${l}</span><span class="lg-val">${fmt(values[i])} ₼ · ${pct}%</span></div>`;
+  }).join('');
+}
+
+function renderLineChart(){
+  const months = [];
+  const now = new Date();
+  for(let i=5; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push({ label: d.toLocaleDateString('az-AZ', {month:'short', year:'2-digit'}), y: d.getFullYear(), m: d.getMonth() });
+  }
+  const inData = months.map(mo => txs.filter(t=>t.type==='in' && new Date(t.ts).getFullYear()===mo.y && new Date(t.ts).getMonth()===mo.m).reduce((s,t)=>s+t.amount,0));
+  const outData = months.map(mo => txs.filter(t=>t.type==='out' && new Date(t.ts).getFullYear()===mo.y && new Date(t.ts).getMonth()===mo.m).reduce((s,t)=>s+t.amount,0));
+
+  if(charts.line) charts.line.destroy();
+  const ctx = document.getElementById('lineChart').getContext('2d');
+  charts.line = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: months.map(m=>m.label),
+      datasets:[
+        { label:'Gəlir', data:inData, borderColor:'#6E8F5C', backgroundColor:'rgba(110,143,92,0.12)', fill:true, tension:0.3 },
+        { label:'Xərc', data:outData, borderColor:'#B5503E', backgroundColor:'rgba(181,80,62,0.12)', fill:true, tension:0.3 }
+      ]
+    },
+    options:{
+      plugins:{ legend:{ labels:{ color:'#B8B09C', font:{size:11} } } },
+      scales:{
+        x:{ ticks:{ color:'#B8B09C', font:{size:10} }, grid:{ color:'#3A3624' } },
+        y:{ ticks:{ color:'#B8B09C', font:{size:10} }, grid:{ color:'#3A3624' } }
+      }
+    }
+  });
+}
+
+function renderBarChart(){
+  const days = [];
+  for(let i=13; i>=0; i--){
+    const d = new Date(Date.now() - i*86400000);
+    days.push({ label: d.toLocaleDateString('az-AZ',{day:'2-digit',month:'2-digit'}), y:d.getFullYear(), m:d.getMonth(), day:d.getDate() });
+  }
+  const data = days.map(d => txs.filter(t=>{
+    const td = new Date(t.ts);
+    return t.type==='out' && td.getFullYear()===d.y && td.getMonth()===d.m && td.getDate()===d.day;
+  }).reduce((s,t)=>s+t.amount,0));
+
+  if(charts.bar) charts.bar.destroy();
+  const ctx = document.getElementById('barChart').getContext('2d');
+  charts.bar = new Chart(ctx, {
+    type:'bar',
+    data:{ labels: days.map(d=>d.label), datasets:[{ data, backgroundColor:'#C9A646', borderRadius:2 }] },
+    options:{
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ ticks:{ color:'#B8B09C', font:{size:9} }, grid:{ display:false } },
+        y:{ ticks:{ color:'#B8B09C', font:{size:10} }, grid:{ color:'#3A3624' } }
+      }
+    }
+  });
+}
+
+/* ---------- DEBTS VIEW ---------- */
+function setDebtTab(tab){
+  debtTab = tab;
+  renderDebts();
+}
+
+function renderDebts(){
+  document.getElementById('debt-tab-owe').className = debtTab==='owe' ? 'active-owe' : '';
+  document.getElementById('debt-tab-owed').className = debtTab==='owed' ? 'active-owed' : '';
+
+  const oweTotal = debts.filter(d=>d.type==='owe' && !d.settled).reduce((s,d)=>s+d.amount,0);
+  const owedTotal = debts.filter(d=>d.type==='owed' && !d.settled).reduce((s,d)=>s+d.amount,0);
+
+  document.getElementById('debt-stat-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="sc-label">Mənim Borcum</div>
+      <div class="sc-value bad">${fmt(oweTotal)} ₼</div>
+      <div class="sc-sub">Ödəməli olduğun cəm</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">Mənə Borc Var</div>
+      <div class="sc-value good">${fmt(owedTotal)} ₼</div>
+      <div class="sc-sub">Geri alacağın cəm</div>
+    </div>
+  `;
+
+  const list = document.getElementById('debt-list');
+  const filtered = debts.filter(d=>d.type===debtTab).sort((a,b)=>{
+    if(a.settled !== b.settled) return a.settled ? 1 : -1;
+    return b.ts - a.ts;
+  });
+
+  if(filtered.length===0){
+    list.innerHTML = `<div class="empty-note">${debtTab==='owe' ? 'Heç bir borcun qeyd olunmayıb.' : 'Heç kimə borc verməmisən.'}</div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  filtered.forEach(d=>{
+    const card = document.createElement('div');
+    card.className = 'debt-card' + (d.settled ? ' settled' : '');
+    let dueHtml = '';
+    if(d.dueDate && !d.settled){
+      const due = new Date(d.dueDate);
+      const daysLeft = Math.ceil((due - Date.now()) / 86400000);
+      const dateStr = due.toLocaleDateString('az-AZ', {day:'2-digit', month:'short', year:'numeric'});
+      if(daysLeft < 0) dueHtml = `<div class="dc-due late">⚠ Vaxtı keçib — ${dateStr}</div>`;
+      else if(daysLeft <= 7) dueHtml = `<div class="dc-due soon">Son tarix: ${dateStr} (${daysLeft} gün qalıb)</div>`;
+      else dueHtml = `<div class="dc-due">Son tarix: ${dateStr}</div>`;
+    }
+    let extraMeta = '';
+    if(d.type==='owe' && (d.interestRate || d.minPayment)){
+      const parts = [];
+      if(d.interestRate) parts.push(`Faiz: ${d.interestRate}%/il`);
+      if(d.minPayment) parts.push(`Min. ödəniş: ${fmt(d.minPayment)} ₼/ay`);
+      extraMeta = `<div class="dc-meta">${parts.join(' · ')}</div>`;
+    }
+    card.innerHTML = `
+      <div class="dc-top">
+        <div>
+          <div class="dc-name">${d.person}</div>
+          <div class="dc-meta">${d.note || (d.type==='owe' ? 'Borc' : 'Borc verilib')}</div>
+          ${extraMeta}
+          ${dueHtml}
+        </div>
+        <div class="dc-amt ${d.type}">${fmt(d.amount)} ₼</div>
+      </div>
+      ${!d.settled ? `
+      <div class="dc-actions">
+        <button class="settle-btn" onclick="settleDebt(${d.id})">${d.type==='owe' ? '✓ Ödədim' : '✓ Geri aldım'}</button>
+        <button onclick="deleteDebt(${d.id})">Sil</button>
+      </div>` : `<div style="font-size:11px; color:var(--green); margin-top:10px;">✓ Bağlanıb</div>`}
+    `;
+    list.appendChild(card);
+  });
+
+  renderPayoffStrategy();
+}
+
+/* ---------- DEBT PAYOFF STRATEGY ---------- */
+function setStrategy(strat){
+  payoffStrategy = strat;
+  localStorage.setItem('xz_strategy', strat);
+  renderPayoffStrategy();
+}
+
+function renderPayoffStrategy(){
+  const activeOwed = debts.filter(d=>d.type==='owe' && !d.settled);
+  const label = document.getElementById('strategy-section-label');
+  const toggle = document.getElementById('strategy-toggle');
+  const introEl = document.getElementById('strategy-intro');
+  const orderEl = document.getElementById('strategy-order');
+
+  if(activeOwed.length < 2){
+    label.style.display = 'none';
+    toggle.style.display = 'none';
+    introEl.innerHTML = '';
+    orderEl.innerHTML = '';
+    return;
+  }
+
+  label.style.display = 'flex';
+  toggle.style.display = 'flex';
+  document.getElementById('strat-snowball-btn').className = payoffStrategy==='snowball' ? 'active-owe' : '';
+  document.getElementById('strat-avalanche-btn').className = payoffStrategy==='avalanche' ? 'active-owe' : '';
+
+  introEl.innerHTML = payoffStrategy==='snowball'
+    ? '<b style="color:var(--bone);">Snowball:</b> əvvəlcə ən kiçik borcu bağla — bu, motivasiyanı sürətlə yüksəldir, psixoloji qələbə verir.'
+    : '<b style="color:var(--bone);">Avalanche:</b> əvvəlcə ən yüksək faizli borcu bağla — bu, ümumi ödədiyin faiz məbləğini minimuma endirir, riyazi cəhətdən ən qənaətlidir.';
+
+  const sorted = [...activeOwed].sort((a,b)=>{
+    if(payoffStrategy === 'snowball') return a.amount - b.amount;
+    return (b.interestRate||0) - (a.interestRate||0);
+  });
+
+  orderEl.innerHTML = sorted.map((d,i)=>`
+    <div class="debt-card" style="margin-bottom:8px;">
+      <div class="dc-top">
+        <div>
+          <div class="dc-name">${i+1}. ${d.person}</div>
+          <div class="dc-meta">${d.interestRate ? d.interestRate+'%/il' : 'Faiz qeyd olunmayıb'}${d.minPayment ? ' · Min: '+fmt(d.minPayment)+' ₼' : ''}</div>
+        </div>
+        <div class="dc-amt owe">${fmt(d.amount)} ₼</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openDebtModal(){
+  document.getElementById('debt-modal').classList.add('show');
+  setDebtType('owe');
+  document.getElementById('debt-person').value='';
+  document.getElementById('debt-amount').value='';
+  document.getElementById('debt-due').value='';
+  document.getElementById('debt-note').value='';
+  document.getElementById('debt-interest').value='';
+  document.getElementById('debt-minpay').value='';
+}
+function closeDebtModal(){
+  document.getElementById('debt-modal').classList.remove('show');
+}
+function setDebtType(type){
+  currentDebtType = type;
+  document.getElementById('debt-type-owe-btn').className = type==='owe' ? 'sel-out' : '';
+  document.getElementById('debt-type-owed-btn').className = type==='owed' ? 'sel-in' : '';
+  document.getElementById('debt-owe-fields').style.display = type==='owe' ? 'block' : 'none';
+}
+function submitDebt(){
+  const person = document.getElementById('debt-person').value.trim();
+  const amount = parseFloat(document.getElementById('debt-amount').value);
+  const due = document.getElementById('debt-due').value;
+  const note = document.getElementById('debt-note').value.trim();
+  const interestRate = parseFloat(document.getElementById('debt-interest').value) || 0;
+  const minPayment = parseFloat(document.getElementById('debt-minpay').value) || 0;
+  if(!person || !amount || amount<=0){
+    alert('Zəhmət olmasa şəxs adı və düzgün məbləğ daxil et.');
+    return;
+  }
+  debts.push({
+    id: Date.now() + Math.random(),
+    type: currentDebtType,
+    person, amount, note,
+    dueDate: due || null,
+    ts: Date.now(),
+    settled: false,
+    interestRate, minPayment
+  });
+  save();
+  closeDebtModal();
+  debtTab = currentDebtType;
+  renderDebts();
+}
+function settleDebt(id){
+  const d = debts.find(x=>x.id===id);
+  if(!d) return;
+  d.settled = true;
+  d.settledTs = Date.now();
+  save();
+  renderDebts();
+}
+function deleteDebt(id){
+  debts = debts.filter(d=>d.id!==id);
+  save();
+  renderDebts();
+}
+
+/* ---------- INSTALL HINT ---------- */
+function renderInstallHint(){
+  if(localStorage.getItem('xz_hint_dismissed')) return;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const wrap = document.getElementById('install-hint-wrap');
+  const text = isIOS
+    ? 'Bunu telefonunda app kimi saxlamaq üçün: aşağıdaki paylaşım düyməsinə bas → "Ana ekrana əlavə et".'
+    : 'Bunu telefonunda app kimi saxlamaq üçün: yuxarı sağdaki ⋮ menyusuna bas → "Ana ekrana əlavə et".';
+  wrap.innerHTML = `
+    <div class="install-hint">
+      <span>📲</span>
+      <span>${text}</span>
+      <button class="ih-x" onclick="dismissHint()">✕</button>
+    </div>
+  `;
+}
+function dismissHint(){
+  localStorage.setItem('xz_hint_dismissed','1');
+  document.getElementById('install-hint-wrap').innerHTML='';
+}
+
+/* ---------- SETTINGS VIEW ---------- */
+function renderSettings(){
+  renderEmergencyFund();
+  renderPinStatus();
+}
+
+function renderEmergencyFund(){
+  // estimate monthly living cost from "living/needs" type buckets' spent amount, or fallback to total outflow / months tracked
+  const days = txs.length ? Math.max(1, Math.ceil((Date.now() - Math.min(...txs.map(t=>t.ts))) / 86400000)) : 30;
+  const months = Math.max(1, days/30);
+  const totalOut = txs.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+  const avgMonthly = totalOut / months;
+  const vaultBal = bucketBalance('vault');
+  const target3 = avgMonthly * 3;
+  const target6 = avgMonthly * 6;
+  const coverage = avgMonthly>0 ? (vaultBal/avgMonthly) : 0;
+
+  document.getElementById('emergency-fund-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="sc-label">Aylıq Orta Xərc</div>
+      <div class="sc-value">${fmt(avgMonthly)} ₼</div>
+      <div class="sc-sub">${months.toFixed(1)} ayın ortalaması</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">Hazırkı Əhatə</div>
+      <div class="sc-value ${coverage>=3?'good':'bad'}">${coverage.toFixed(1)} ay</div>
+      <div class="sc-sub">Əmanətin neçə ay yaşadar</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">3 Aylıq Hədəf</div>
+      <div class="sc-value">${fmt(target3)} ₼</div>
+      <div class="sc-sub">Minimum tövsiyə</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">6 Aylıq Hədəf</div>
+      <div class="sc-value">${fmt(target6)} ₼</div>
+      <div class="sc-sub">Tam təhlükəsizlik</div>
+    </div>
+  `;
+}
+
+/* ---------- EXPORT / IMPORT ---------- */
+function exportData(){
+  const data = {
+    exportedAt: new Date().toISOString(),
+    transactions: txs,
+    buckets: buckets,
+    journal: journal,
+    debts: debts,
+    goals: goals,
+    recurring: recurring,
+    strategy: payoffStrategy
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'xezine-yedek-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!confirm('Bu, mövcud bütün məlumatlarını ehtiyat nüsxədəki ilə əvəzləyəcək. Davam edək?')) return;
+      txs = data.transactions || [];
+      buckets = data.buckets || DEFAULT_BUCKETS.map(b=>({...b}));
+      journal = data.journal || [];
+      debts = data.debts || [];
+      goals = data.goals || [];
+      recurring = data.recurring || [];
+      payoffStrategy = data.strategy || 'snowball';
+      save();
+      localStorage.setItem('xz_strategy', payoffStrategy);
+      alert('Məlumatlar uğurla geri yükləndi.');
+      renderHome();
+      renderSettings();
+    } catch(err){
+      alert('Fayl oxuna bilmədi. Düzgün ehtiyat nüsxə faylı olduğundan əmin ol.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function resetAllData(){
+  if(!confirm('Həqiqətən bütün məlumatlarını silmək istəyirsən? Bu geri qaytarıla bilməz.')) return;
+  if(!confirm('Son təsdiq: hər şey silinəcək. Davam edək?')) return;
+  localStorage.removeItem('xz_transactions');
+  localStorage.removeItem('xz_buckets');
+  localStorage.removeItem('xz_journal');
+  localStorage.removeItem('xz_debts');
+  localStorage.removeItem('xz_goals');
+  localStorage.removeItem('xz_recurring');
+  localStorage.removeItem('xz_pin');
+  localStorage.removeItem('xz_strategy');
+  location.reload();
+}
+
+/* ---------- PIN LOCK SYSTEM ---------- */
+function renderPinStatus(){
+  const statusText = document.getElementById('pin-status-text');
+  const setBtn = document.getElementById('pin-set-btn');
+  const removeBtn = document.getElementById('pin-remove-btn');
+  if(savedPin){
+    statusText.textContent = 'PIN qoyulub. Tətbiqi hər açanda kodu daxil etməli olacaqsan.';
+    setBtn.textContent = 'PIN-i Dəyiş';
+    removeBtn.style.display = 'block';
+  } else {
+    statusText.textContent = 'PIN qoyulmayıb. Maliyyə məlumatların hər kəsə açıqdır.';
+    setBtn.textContent = 'PIN Qoy';
+    removeBtn.style.display = 'none';
+  }
+}
+
+function removePin(){
+  if(!confirm('PIN qorumasını söndürmək istəyirsən?')) return;
+  savedPin = null;
+  localStorage.removeItem('xz_pin');
+  renderPinStatus();
+}
+
+function startPinSetup(){
+  pinMode = 'setup';
+  pinEntry = '';
+  pinFirstEntry = '';
+  document.getElementById('lock-title').textContent = 'Yeni PIN Yarat';
+  document.getElementById('lock-sub').textContent = '4 rəqəmli kod seç';
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('pin-skip-btn').style.display = 'block';
+  document.getElementById('pin-skip-btn').textContent = 'İmtina et';
+  updatePinDots();
+  document.getElementById('lock-screen').style.display = 'flex';
+}
+
+function skipPinSetup(){
+  if(pinMode === 'setup' || pinMode === 'confirm'){
+    document.getElementById('lock-screen').style.display = 'none';
+    pinMode = 'unlock';
+  }
+}
+
+function updatePinDots(){
+  const dots = document.querySelectorAll('#pin-dots .pd');
+  dots.forEach((d,i)=> d.classList.toggle('filled', i < pinEntry.length));
+}
+
+function pinPress(digit){
+  if(pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+  if(pinEntry.length === 4){
+    setTimeout(()=> handlePinComplete(), 150);
+  }
+}
+function pinBackspace(){
+  pinEntry = pinEntry.slice(0,-1);
+  updatePinDots();
+}
+function pinClearAll(){
+  pinEntry = '';
+  updatePinDots();
+}
+
+function handlePinComplete(){
+  if(pinMode === 'unlock'){
+    if(pinEntry === savedPin){
+      document.getElementById('lock-screen').style.display = 'none';
+      pinEntry = '';
+    } else {
+      document.getElementById('pin-error').textContent = 'Yanlış PIN. Yenidən cəhd et.';
+      pinEntry = '';
+      updatePinDots();
+    }
+  } else if(pinMode === 'setup'){
+    pinFirstEntry = pinEntry;
+    pinEntry = '';
+    pinMode = 'confirm';
+    document.getElementById('lock-title').textContent = 'PIN-i Təsdiqlə';
+    document.getElementById('lock-sub').textContent = 'Kodu bir də daxil et';
+    updatePinDots();
+  } else if(pinMode === 'confirm'){
+    if(pinEntry === pinFirstEntry){
+      savedPin = pinEntry;
+      localStorage.setItem('xz_pin', savedPin);
+      document.getElementById('lock-screen').style.display = 'none';
+      pinEntry = '';
+      pinMode = 'unlock';
+      renderPinStatus();
+    } else {
+      document.getElementById('pin-error').textContent = 'Kodlar uyğun gəlmədi. Yenidən başla.';
+      pinEntry = '';
+      pinFirstEntry = '';
+      pinMode = 'setup';
+      document.getElementById('lock-title').textContent = 'Yeni PIN Yarat';
+      document.getElementById('lock-sub').textContent = '4 rəqəmli kod seç';
+      updatePinDots();
+    }
+  }
+}
+
+function checkLockOnLoad(){
+  if(savedPin){
+    pinMode = 'unlock';
+    pinEntry = '';
+    document.getElementById('lock-title').textContent = 'PIN Daxil Et';
+    document.getElementById('lock-sub').textContent = 'Maliyyə məlumatların qorunur';
+    document.getElementById('pin-skip-btn').style.display = 'none';
+    updatePinDots();
+    document.getElementById('lock-screen').style.display = 'flex';
+  }
+}
+
+/* ---------- INIT ---------- */
+renderHome();
+renderInstallHint();
+checkLockOnLoad();
+checkDueRecurring();
+</script>
+</body>
+</html>
